@@ -1,55 +1,45 @@
 import streamlit as st
 from datetime import datetime, timedelta
-import pytz
 
 st.set_page_config(page_title="5 Hours Tracker", layout="centered")
 
-# Detect timezone from browser (fallback UTC if not available)
-try:
-    import streamlit_js_eval
-    user_tz = streamlit_js_eval.get_timezone() or "UTC"
-except:
-    user_tz = "UTC"
-
+# User inputs
 start_time_str = st.text_input("Enter start time (HH:MM AM/PM)", "09:00 AM")
+check_time_str = st.text_input("Enter check time (HH:MM AM/PM)", "11:00 AM")
 
 if st.button("Calculate"):
     try:
-        tz = pytz.timezone(user_tz)
+        # Parse both times (no date attached, just time)
+        start_time = datetime.strptime(start_time_str, "%I:%M %p")
+        check_time = datetime.strptime(check_time_str, "%I:%M %p")
 
-        # Parse the user input time
-        today = datetime.now(tz).date()
-        start_time = datetime.strptime(start_time_str, "%I:%M %p").time()
-        start_datetime = tz.localize(datetime.combine(today, start_time))
+        # Target end = start + 5 hours
+        target_time = start_time + timedelta(hours=5)
 
-        # If start time is in the future today → assume it was yesterday
-        now = datetime.now(tz)
-        if start_datetime > now:
-            start_datetime = start_datetime - timedelta(days=1)
+        # Calculate elapsed and remaining
+        elapsed = (check_time - start_time).total_seconds()
+        remaining = (target_time - check_time).total_seconds()
 
-        # Target time = start + 5 hours
-        target_time = start_datetime + timedelta(hours=5)
+        # If check_time is before start_time, assume it's on the next day
+        if elapsed < 0:
+            elapsed += 24 * 3600
+            remaining = (5 * 3600) - elapsed
 
-        # Time deltas
-        elapsed_delta = now - start_datetime
-        remaining_delta = target_time - now
-
-        if remaining_delta.total_seconds() < 0:
-            remaining_delta = timedelta(0)
+        if remaining < 0:
+            remaining = 0
 
         # Format helper
-        def format_hms(td):
-            total_seconds = int(td.total_seconds())
-            hours, remainder = divmod(total_seconds, 3600)
-            minutes, seconds = divmod(remainder, 60)
-            return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        def format_hms(seconds):
+            seconds = int(seconds)
+            hours, remainder = divmod(seconds, 3600)
+            minutes, secs = divmod(remainder, 60)
+            return f"{hours:02d}:{minutes:02d}:{secs:02d}"
 
-        # Show results
-        st.write(f"Detected Timezone: {user_tz}")
-        st.write(f"Start Time: {start_datetime.strftime('%I:%M %p')}")
+        # Display results
+        st.write(f"Start Time: {start_time.strftime('%I:%M %p')}")
         st.write(f"Target End Time: {target_time.strftime('%I:%M %p')}")
-        st.write(f"Hours Elapsed: {format_hms(elapsed_delta)} (HH:MM:SS)")
-        st.write(f"Hours Remaining: {format_hms(remaining_delta)} (HH:MM:SS)")
+        st.write(f"Hours Elapsed: {format_hms(elapsed)} (HH:MM:SS)")
+        st.write(f"Hours Remaining: {format_hms(remaining)} (HH:MM:SS)")
 
     except ValueError:
         st.error("Invalid format! Please use HH:MM AM/PM (e.g., 09:30 AM)")
