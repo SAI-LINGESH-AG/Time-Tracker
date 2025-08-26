@@ -38,8 +38,8 @@ if st.button("Calculate"):
         # Display results
         st.write(f"Start Time: {start_time.strftime('%I:%M %p')}")
         st.write(f"Target End Time: {target_time.strftime('%I:%M %p')}")
-        st.write(f"Hours Elapsed: {format_hms(elapsed)} (HH:MM:SS)")
-        st.write(f"Hours Remaining: {format_hms(remaining)} (HH:MM:SS)")
+        st.write(f"Hours Elapsed: {format_hms(elapsed)}")
+        st.write(f"Hours Remaining: {format_hms(remaining)}")
 
     except ValueError:
         st.error("Invalid format! Please use HH:MM AM/PM (e.g., 09:30 AM)")
