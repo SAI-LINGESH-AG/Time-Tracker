@@ -1,12 +1,16 @@
 import streamlit as st
 from datetime import datetime, timedelta
 import pytz
+from streamlit_js_eval import get_timezone
 
 st.set_page_config(page_title="5 Hours Tracker", layout="centered")
 
-# Let user select their timezone
-timezones = pytz.all_timezones
-user_tz = st.selectbox("Select your Timezone", ["Asia/Kolkata", "UTC", "US/Eastern", "Europe/London"] + timezones)
+# Auto-detect user's timezone
+user_tz = get_timezone()
+
+if user_tz is None:
+    st.warning("Unable to detect timezone. Defaulting to UTC.")
+    user_tz = "UTC"
 
 # User input
 start_time_str = st.text_input("Enter start time (HH:MM AM/PM)", "09:00 AM")
@@ -44,10 +48,11 @@ if st.button("Calculate"):
                 return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
             # Show results
+            st.write(f"Detected Timezone: {user_tz}")
             st.write(f"Start Time: {start_datetime.strftime('%I:%M %p')}")
             st.write(f"Target End Time: {target_time.strftime('%I:%M %p')}")
-            st.write(f"Hours Elapsed: {format_hms(elapsed_delta)}")
-            st.write(f"Hours Remaining: {format_hms(remaining_delta)}")
+            st.write(f"Hours Elapsed: {format_hms(elapsed_delta)} (HH:MM:SS)")
+            st.write(f"Hours Remaining: {format_hms(remaining_delta)} (HH:MM:SS)")
 
     except ValueError:
         st.error("Invalid format! Please use HH:MM AM/PM (e.g., 09:30 AM)")
